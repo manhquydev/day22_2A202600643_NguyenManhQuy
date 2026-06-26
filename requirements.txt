@@ -21,12 +21,12 @@ pyarrow>=17,<22                         # parquet for data/pref/
 # ── Local serving (notebook 05) ───────────────────────────────
 # llama-cpp-python compiles llama.cpp inside the wheel — lets us smoke-test
 # the GGUF without needing a separate llama.cpp install.
-llama-cpp-python>=0.3,<1.0
+# llama-cpp-python>=0.3,<1.0
 
 # ── Benchmark suite (notebook 06) ────────────────────────────
 # lm-eval-harness — field-standard scorer for IFEval, GSM8K, MMLU.
 # Extras: ifeval (langdetect), math (sympy for LaTeX matching).
-lm-eval[ifeval,math]>=0.4.5,<1.0
+# lm-eval[ifeval,math]>=0.4.5,<1.0
 
 # ── Notebook ──────────────────────────────────────────────────
 jupyterlab>=4.3,<5.0
