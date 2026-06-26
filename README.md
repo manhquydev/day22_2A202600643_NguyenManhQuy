@@ -1,5 +1,16 @@
 # Day 22 — DPO/ORPO Alignment Lab (Track 3)
 
+### 🚀 Tình trạng hoàn thiện bài (Completion Status)
+- **Trạng thái:** Hoàn thành toàn bộ phần lõi (Core Notebooks 01 - 04) và đã chạy kiểm thử thành công (`verify.py` PASS).
+- **Môi trường chạy:** Google Colab T4 GPU (16GB VRAM) kết hợp với PyTorch SDPA (gỡ bỏ xformers để tránh lỗi tương thích kiến trúc Turing T4).
+- **Kết quả huấn luyện DPO:**
+  - Loss huấn luyện cuối cùng: **0.9890**
+  - Reward Gap cuối kỳ: **-0.0568** (gap âm nhẹ do giới hạn dung lượng mô hình Qwen2.5-0.5B và thời lượng huấn luyện 1 epoch).
+- **Kết quả đánh giá LLM-as-a-judge:** **8/8 hòa (tie)** do mô hình 0.5B bị suy thoái và lặp từ tuần hoàn ở cả hai phiên bản SFT và DPO (chi tiết trong [REFLECTION.md](submission/REFLECTION.md)).
+- **Minh chứng deliverables:** Đầy đủ 5 ảnh chụp màn hình bắt buộc nằm trong thư mục `submission/screenshots/` và file báo cáo phản tư [REFLECTION.md](submission/REFLECTION.md).
+
+---
+
 Lab cho **AICB-P2T3 · Ngày 22 · DPO/ORPO Alignment — From SFT to Preference Learning**.
 Build SFT-mini checkpoint → train DPO adapter → compare SFT-only vs SFT+DPO → merge + GGUF + serve.
 
