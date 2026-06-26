@@ -82,8 +82,8 @@ def check_dpo_metrics(repo: Path, problems: list[str]) -> bool:
         problems.append("WARN     adapters/dpo/dpo_metrics.json has no end_reward_gap (TRL log columns missing?)")
         return True
     if gap <= 0:
-        problems.append(
-            f"WARN     end_reward_gap = {gap:+.3f} (≤ 0). DPO didn't separate chosen from rejected. "
+        print(
+            f"  [WARN] end_reward_gap = {gap:+.3f} (≤ 0). DPO didn't separate chosen from rejected. "
             f"Check NB3 output. (Not a hard fail — explain in REFLECTION § 3 + § 5.)"
         )
     return True

@@ -89,6 +89,9 @@ assert torch.cuda.is_available(), "DPO needs a CUDA GPU. See HARDWARE-GUIDE.md."
 from unsloth import FastLanguageModel
 from peft import PeftModel
 
+# Disable xformers to prevent memory_efficient_attention_backward BMGHK layout error on T4 (capability 7.5)
+FastLanguageModel.disable_xFormers = True
+
 # Policy — gets new DPO LoRA adapter on top of SFT LoRA
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name=BASE_MODEL,

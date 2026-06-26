@@ -65,6 +65,9 @@ def main():
     from trl import DPOConfig, DPOTrainer
     from unsloth import FastLanguageModel
 
+    # Disable xformers to prevent memory_efficient_attention_backward BMGHK layout error on T4 (capability 7.5)
+    FastLanguageModel.disable_xFormers = True
+
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=base_model, max_seq_length=max_len, dtype=None, load_in_4bit=True,
     )
