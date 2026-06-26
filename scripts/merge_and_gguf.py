@@ -15,6 +15,16 @@ import argparse
 import os
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+env_path = Path.cwd().parent / ".env" if Path.cwd().name == "notebooks" else Path.cwd() / ".env"
+if env_path.exists():
+    for _line in env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _val = _line.split("=", 1)
+            _val = _val.split("#")[0].strip().strip('"').strip("'")
+            os.environ[_key.strip()] = _val
+
 REPO = Path(__file__).resolve().parent.parent
 
 
@@ -31,7 +41,8 @@ def main():
     quants = args.quant or ["q4_k_m"]
 
     tier = os.environ.get("COMPUTE_TIER", "T4").upper()
-    base = (
+    base = os.environ.get(
+        "BASE_MODEL",
         "unsloth/Qwen2.5-3B-bnb-4bit" if tier == "T4"
         else "unsloth/Qwen2.5-7B-bnb-4bit"
     )
@@ -53,6 +64,8 @@ def main():
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    if getattr(tokenizer, "chat_template", None) is None:
+        tokenizer.chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n'}}{% endfor %}{% if add_generation_prompt %}{{'<|im_start|>assistant\\n'}}{% endif %}"
 
     model = PeftModel.from_pretrained(model, args.sft_path)
     print("Loaded SFT-mini adapter")

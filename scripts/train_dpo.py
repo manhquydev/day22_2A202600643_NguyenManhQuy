@@ -16,6 +16,16 @@ import json
 import os
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+env_path = Path.cwd().parent / ".env" if Path.cwd().name == "notebooks" else Path.cwd() / ".env"
+if env_path.exists():
+    for _line in env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _val = _line.split("=", 1)
+            _val = _val.split("#")[0].strip().strip('"').strip("'")
+            os.environ[_key.strip()] = _val
+
 REPO = Path(__file__).resolve().parent.parent
 
 
@@ -31,11 +41,13 @@ def main():
 
     tier = os.environ.get("COMPUTE_TIER", "T4").upper()
     if tier == "T4":
-        base_model = "unsloth/Qwen2.5-3B-bnb-4bit"
+        default_base = "unsloth/Qwen2.5-3B-bnb-4bit"
+        base_model = os.environ.get("BASE_MODEL", default_base)
         max_len, max_prompt = 512, 256
         batch, grad_accum = 1, 8
     else:
-        base_model = "unsloth/Qwen2.5-7B-bnb-4bit"
+        default_base = "unsloth/Qwen2.5-7B-bnb-4bit"
+        base_model = os.environ.get("BASE_MODEL", default_base)
         max_len, max_prompt = 1024, 512
         batch, grad_accum = 1, 4
 
@@ -58,6 +70,8 @@ def main():
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    if getattr(tokenizer, "chat_template", None) is None:
+        tokenizer.chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n'}}{% endfor %}{% if add_generation_prompt %}{{'<|im_start|>assistant\\n'}}{% endif %}"
 
     model = PeftModel.from_pretrained(model, args.sft_path, is_trainable=True)
     model = FastLanguageModel.get_peft_model(

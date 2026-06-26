@@ -31,6 +31,16 @@ import json
 import gc
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+env_path = Path.cwd().parent / ".env" if Path.cwd().name == "notebooks" else Path.cwd() / ".env"
+if env_path.exists():
+    for _line in env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _val = _line.split("=", 1)
+            _val = _val.split("#")[0].strip().strip('"').strip("'")
+            os.environ[_key.strip()] = _val
+
 COMPUTE_TIER = os.environ.get("COMPUTE_TIER", "T4").upper()
 
 if COMPUTE_TIER == "T4":
@@ -76,7 +86,8 @@ import subprocess
 
 def run_lm_eval(adapter_path, tasks, limit, num_fewshot, label):
     """Run lm-eval-harness with PEFT adapter on top of base, return parsed metrics."""
-    base = "unsloth/Qwen2.5-3B-bnb-4bit" if COMPUTE_TIER == "T4" else "unsloth/Qwen2.5-7B-bnb-4bit"
+    default_base = "unsloth/Qwen2.5-3B-bnb-4bit" if COMPUTE_TIER == "T4" else "unsloth/Qwen2.5-7B-bnb-4bit"
+    base = os.environ.get("BASE_MODEL", default_base)
     out_dir = EVAL_OUT / f"lm-{label}-{tasks}"
     cmd = [
         "lm_eval",
@@ -188,7 +199,8 @@ def generate_with_adapter(adapter_path, prompts, max_new_tokens=256):
     from unsloth import FastLanguageModel
     from peft import PeftModel
 
-    base = "unsloth/Qwen2.5-3B-bnb-4bit" if COMPUTE_TIER == "T4" else "unsloth/Qwen2.5-7B-bnb-4bit"
+    default_base = "unsloth/Qwen2.5-3B-bnb-4bit" if COMPUTE_TIER == "T4" else "unsloth/Qwen2.5-7B-bnb-4bit"
+    base = os.environ.get("BASE_MODEL", default_base)
     max_len = 512 if COMPUTE_TIER == "T4" else 1024
 
     model, tokenizer = FastLanguageModel.from_pretrained(
@@ -196,6 +208,8 @@ def generate_with_adapter(adapter_path, prompts, max_new_tokens=256):
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+    if getattr(tokenizer, "chat_template", None) is None:
+        tokenizer.chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n'}}{% endfor %}{% if add_generation_prompt %}{{'<|im_start|>assistant\\n'}}{% endif %}"
     model = PeftModel.from_pretrained(model, str(adapter_path))
     FastLanguageModel.for_inference(model)
 

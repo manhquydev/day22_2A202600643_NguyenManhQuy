@@ -26,6 +26,16 @@
 import os
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+env_path = Path.cwd().parent / ".env" if Path.cwd().name == "notebooks" else Path.cwd() / ".env"
+if env_path.exists():
+    for _line in env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _val = _line.split("=", 1)
+            _val = _val.split("#")[0].strip().strip('"').strip("'")
+            os.environ[_key.strip()] = _val
+
 COMPUTE_TIER = os.environ.get("COMPUTE_TIER", "T4").upper()
 
 if COMPUTE_TIER == "T4":
@@ -62,6 +72,8 @@ assert ADAPTER_DIR.exists(), f"NB1 must run first — {ADAPTER_DIR} missing"
 tokenizer = AutoTokenizer.from_pretrained(ADAPTER_DIR)
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
+if getattr(tokenizer, "chat_template", None) is None:
+    tokenizer.chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n'}}{% endfor %}{% if add_generation_prompt %}{{'<|im_start|>assistant\\n'}}{% endif %}"
 print(f"Tokenizer: {tokenizer.__class__.__name__}  vocab={tokenizer.vocab_size:,}")
 
 # %% [markdown]

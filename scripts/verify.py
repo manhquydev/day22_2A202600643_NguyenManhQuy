@@ -115,10 +115,10 @@ def smoke_check(repo: Path) -> int:
     # Imports
     try:
         import torch  # noqa: WPS433
-        print(f"  ✓ torch              {torch.__version__}")
+        print(f"  [OK] torch              {torch.__version__}")
         if torch.cuda.is_available():
             dev = torch.cuda.get_device_properties(0)
-            print(f"  ✓ CUDA               {dev.name} ({dev.total_memory / 1e9:.1f} GB)")
+            print(f"  [OK] CUDA               {dev.name} ({dev.total_memory / 1e9:.1f} GB)")
         else:
             problems.append("torch.cuda.is_available() == False -- DPO needs a CUDA/ROCm GPU. Use the Colab T4 path (see HARDWARE-GUIDE.md); this local smoke gate cannot pass on CPU/Mac.")
     except ImportError as exc:
@@ -127,7 +127,7 @@ def smoke_check(repo: Path) -> int:
     for mod in ["unsloth", "trl", "peft", "bitsandbytes", "datasets", "matplotlib"]:
         try:
             __import__(mod)
-            print(f"  ✓ {mod}")
+            print(f"  [OK] {mod}")
         except (ImportError, NotImplementedError, RuntimeError) as exc:
             # unsloth raises NotImplementedError (not ImportError) when no GPU is present.
             problems.append(f"{mod} import failed: {exc}")
@@ -135,9 +135,9 @@ def smoke_check(repo: Path) -> int:
     # Deck source (sibling file)
     deck = repo.parent / "day07-dpo-orpo-alignment-tu-sft-en-preference-learning.tex"
     if deck.exists():
-        print(f"  ✓ deck source        {deck.name}")
+        print(f"  [OK] deck source        {deck.name}")
     else:
-        print(f"  ⚠ deck source not found at {deck} — fine if you cloned standalone")
+        print(f"  [WARN] deck source not found at {deck} — fine if you cloned standalone")
 
     # Notebook source files
     nb_dir = repo / "notebooks"
@@ -147,24 +147,24 @@ def smoke_check(repo: Path) -> int:
     ]
     for nb in expected_nbs:
         if (nb_dir / nb).exists():
-            print(f"  ✓ {nb}")
+            print(f"  [OK] {nb}")
         else:
             problems.append(f"missing notebook {nb_dir / nb}")
 
     # NB6 benchmark dependency check
     try:
         import lm_eval  # noqa: F401
-        print(f"  ✓ lm_eval (NB6 benchmark suite)")
+        print(f"  [OK] lm_eval (NB6 benchmark suite)")
     except ImportError:
         problems.append("lm_eval missing — pip install -r requirements.txt (NB6 will fail)")
 
     print()
     if problems:
-        print("✗ Smoke check FAILED:\n")
+        print("[FAIL] Smoke check FAILED:\n")
         for line in problems:
             print(f"  - {line}")
         return 1
-    print("✓ Smoke check passed. You can now run `make pipeline` (or open a notebook).")
+    print("[OK] Smoke check passed. You can now run `make pipeline` (or open a notebook).")
     return 0
 
 
@@ -219,19 +219,19 @@ def main() -> int:
     check_reflection_edited(repo / "submission" / "REFLECTION.md", problems)
     n_shots = check_screenshots(repo / "submission" / "screenshots", min_count=3, problems=problems)
     if n_shots:
-        print(f"  ✓ submission/screenshots/ has {n_shots} image(s)")
+        print(f"  [OK] submission/screenshots/ has {n_shots} image(s)")
 
     if optional:
-        print("\nⓘ Optional (bonus) not done — fine for a core pass:")
+        print("\n[INFO] Optional (bonus) not done — fine for a core pass:")
         for line in optional:
             print(f"  - {line}")
 
     print()
     if not problems:
-        print("✓ Core checks passed. Push your repo (public!) and paste the URL into LMS.")
+        print("[OK] Core checks passed. Push your repo (public!) and paste the URL into LMS.")
         return 0
 
-    print("✗ Submission not ready yet:\n")
+    print("[FAIL] Submission not ready yet:\n")
     for line in problems:
         print(f"  - {line}")
     print(

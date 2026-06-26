@@ -23,16 +23,26 @@
 import os
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+env_path = Path.cwd().parent / ".env" if Path.cwd().name == "notebooks" else Path.cwd() / ".env"
+if env_path.exists():
+    for _line in env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _val = _line.split("=", 1)
+            _val = _val.split("#")[0].strip().strip('"').strip("'")
+            os.environ[_key.strip()] = _val
+
 COMPUTE_TIER = os.environ.get("COMPUTE_TIER", "T4").upper()
 
 if COMPUTE_TIER == "T4":
-    BASE_MODEL = "unsloth/Qwen2.5-3B-bnb-4bit"
+    BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-3B-bnb-4bit")
     MAX_LEN = 512
     MAX_PROMPT_LEN = 256
     PER_DEVICE_BATCH = 1
     GRAD_ACCUM = 8
 else:
-    BASE_MODEL = "unsloth/Qwen2.5-7B-bnb-4bit"
+    BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-7B-bnb-4bit")
     MAX_LEN = 1024
     MAX_PROMPT_LEN = 512
     PER_DEVICE_BATCH = 1

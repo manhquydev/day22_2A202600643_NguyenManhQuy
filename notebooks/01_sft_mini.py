@@ -25,18 +25,28 @@
 import os
 from pathlib import Path
 
+# Load environment variables from .env file if it exists
+env_path = Path.cwd().parent / ".env" if Path.cwd().name == "notebooks" else Path.cwd() / ".env"
+if env_path.exists():
+    for _line in env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _key, _val = _line.split("=", 1)
+            _val = _val.split("#")[0].strip().strip('"').strip("'")
+            os.environ[_key.strip()] = _val
+
 # Tier detection. Defaults to T4 if env not set.
 COMPUTE_TIER = os.environ.get("COMPUTE_TIER", "T4").upper()
 assert COMPUTE_TIER in ("T4", "BIGGPU"), f"Invalid COMPUTE_TIER: {COMPUTE_TIER}"
 
 # Tier-specific hyperparameters
 if COMPUTE_TIER == "T4":
-    BASE_MODEL = "unsloth/Qwen2.5-3B-bnb-4bit"
+    BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-3B-bnb-4bit")
     MAX_LEN = 512
     PER_DEVICE_BATCH = 1
     GRAD_ACCUM = 8
 else:  # BIGGPU
-    BASE_MODEL = "unsloth/Qwen2.5-7B-bnb-4bit"
+    BASE_MODEL = os.environ.get("BASE_MODEL", "unsloth/Qwen2.5-7B-bnb-4bit")
     MAX_LEN = 1024
     PER_DEVICE_BATCH = 2
     GRAD_ACCUM = 4
@@ -84,6 +94,10 @@ model, tokenizer = FastLanguageModel.from_pretrained(
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
     print("Set tokenizer.pad_token = eos_token")
+
+if getattr(tokenizer, "chat_template", None) is None:
+    tokenizer.chat_template = "{% for message in messages %}{{'<|im_start|>' + message['role'] + '\\n' + message['content'] + '<|im_end|>\\n'}}{% endfor %}{% if add_generation_prompt %}{{'<|im_start|>assistant\\n'}}{% endif %}"
+    print("Set default ChatML chat template on tokenizer")
 
 # %%
 model = FastLanguageModel.get_peft_model(
